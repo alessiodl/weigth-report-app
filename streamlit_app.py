@@ -121,26 +121,7 @@ st.write(
     """,
     unsafe_allow_html=True,
 )
-st.markdown("""
-    <style>
-    div[data-testid="metric-container"] {
-    background-color: rgba(28, 131, 225, 0.1);
-    border: 1px solid rgba(28, 131, 225, 0.1);
-    padding: 5% 5% 5% 10%;
-    border-radius: 5px;
-    color: rgb(30, 103, 119);
-    overflow-wrap: break-word;
-    }
 
-    /* breakline for metric text         */
-    div[data-testid="metric-container"] > label[data-testid="stMetricLabel"] > div {
-    overflow-wrap: break-word;
-    white-space: break-spaces;
-    color: red;
-    }
-    </style>
-    """
-, unsafe_allow_html=True)
 
 
 with col1:
@@ -160,7 +141,7 @@ with col2:
     # Estrai la data corrispondente all'indice minimo
     data_minimo_peso = df.loc[indice_minimo_peso, 'Data']
     giorno_minimo_peso = df.loc[indice_minimo_peso, 'Giorno']
-    st.metric(":arrow_down: Minimo", df['Kg'].min(), giorno_minimo_peso+", "+str(data_minimo_peso.strftime("%d/%m/%Y")))
+    st.metric(":arrow_down: Minimo", str(df['Kg'].min())+" Kg", giorno_minimo_peso+", "+str(data_minimo_peso.strftime("%d/%m/%Y")))
     
 with col3:
     # Trova l'indice del valore massimo del peso giornaliero
@@ -168,7 +149,7 @@ with col3:
     # Estrai la data corrispondente all'indice minimo
     data_massimo_peso = df.loc[indice_massimo_peso, 'Data']
     giorno_massimo_peso = df.loc[indice_massimo_peso, 'Giorno']
-    st.metric(":arrow_up: Massimo", df['Kg'].max(), giorno_massimo_peso+", "+str(data_massimo_peso.strftime("%d/%m/%Y")))
+    st.metric(":arrow_up: Massimo", str(df['Kg'].max())+" Kg", giorno_massimo_peso+", "+str(data_massimo_peso.strftime("%d/%m/%Y")))
 
 tab1, tab2 = st.tabs(["Grafico", "Tabella"])
 
