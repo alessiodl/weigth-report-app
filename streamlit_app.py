@@ -13,18 +13,21 @@ data = response.content
 # Leggi i dati in un DataFrame
 df = pd.read_csv(StringIO(data.decode('utf-8')))
 
+df.drop(columns="Media settimanale (Kg)", inplace=True)
+df = df.dropna(subset=['Kg'])
+
 # Sostituisci la virgola con il punto nella colonna 'Kg' e 'Media settimanale (Kg)'
 df['Kg'] = df['Kg'].str.replace(',', '.')
-df['Media settimanale (Kg)'] = df['Media settimanale (Kg)'].str.replace(',', '.')
+#df['Media settimanale (Kg)'] = df['Media settimanale (Kg)'].str.replace(',', '.')
 
 # Converti a tipo float
 df['Kg'] = pd.to_numeric(df['Kg'], errors='coerce')
-df['Media settimanale (Kg)'] = pd.to_numeric(df['Media settimanale (Kg)'], errors='coerce')
+#df['Media settimanale (Kg)'] = pd.to_numeric(df['Media settimanale (Kg)'], errors='coerce')
 
 # Converti la colonna 'Data' in formato datetime
 df['Data'] = pd.to_datetime(df['Data'], format='%d/%m/%Y')
 # Sistema la media settimanale
-df['Media settimanale (Kg)'].fillna(0, inplace=True)
+#df['Media settimanale (Kg)'].fillna(0, inplace=True)
 
 df.sort_values(by="Data", inplace=True, ascending=True)
 
@@ -40,6 +43,9 @@ media_minuti = df['Ora_in_minuti'].mean()
 media_ora = datetime.min + timedelta(minutes=media_minuti)
 media_ora = media_ora.time()
 
+df['Media ultimi 7 giorni'] = df['Kg'].rolling(window=7).mean()
+df['Media ultimi 7 giorni'] = df['Media ultimi 7 giorni'].round(2)
+
 # Crea il grafico con Plotly
 fig = go.Figure()
 
@@ -47,9 +53,9 @@ fig = go.Figure()
 fig.add_trace(go.Scatter(x=df['Data'], y=df['Kg'], mode='lines+markers', name='Peso Giornaliero'))
 
 # Aggiungi la serie per la media settimanale solo per i valori maggiori di 0.0
-filtered_media_settimanale = df[df['Media settimanale (Kg)'] > 0.0]
-fig.add_trace(go.Scatter(x=filtered_media_settimanale['Data'], y=filtered_media_settimanale['Media settimanale (Kg)'],
-                         mode='lines+markers', name='Media Settimanale'))
+filtered_media_settimanale = df[df['Media ultimi 7 giorni'] > 0.0]
+fig.add_trace(go.Scatter(x=filtered_media_settimanale['Data'], y=filtered_media_settimanale['Media ultimi 7 giorni'],
+                         mode='lines+markers', name='Peso medio negli ultimi 7 giorni'))
 
 # Aggiungi le linee verticali per i giorni con 'Kcal Piano nutrizionale' valorizzato
 for index, row in df[df['Kcal Piano nutrizionale'].notna()].iterrows():
@@ -86,7 +92,7 @@ fig.update_layout(
     # title='Grafico del Peso Giornaliero e Media Settimanale',
     # xaxis_title='Data',
     yaxis_title='Peso (Kg)',
-    yaxis=dict(range=[68, 75]),
+    yaxis=dict(range=[69, 75]),
     legend=dict(
         orientation="h",  # "h" per orizzontale, "v" per verticale
         x=0.5,  # Posizione orizzontale della legenda (0-1)
@@ -109,7 +115,7 @@ st.set_page_config(
 st.title(':scales: Weight report :weight_lifter:')
 # st.markdown("Statistiche peso aggiornate quotidianamente. I valori usati per le metriche vengono prelevati da un *Google Spreadisheet*")
 st.divider()
-col1, col2, col3 = st.columns(3)
+col1, col2, col3, col4 = st.columns(4)
 
 st.write(
     """
@@ -121,8 +127,6 @@ st.write(
     """,
     unsafe_allow_html=True,
 )
-
-
 
 with col1:
     # Trova il valore minimo dell'orario
@@ -144,6 +148,22 @@ with col2:
     st.metric(":arrow_down: Minimo", str(df['Kg'].min())+" Kg", giorno_minimo_peso+", "+str(data_minimo_peso.strftime("%d/%m/%Y")))
     
 with col3:
+    df = df.sort_values(by='Data')
+    df = df.dropna(subset=['Kg'])
+    max_date = df['Data'].max()
+    start_date = max_date - pd.DateOffset(6)
+    end_date = max_date
+    # Filtra il DataFrame per ottenere solo le osservazioni degli ultimi 7 giorni
+    last_7_days = df[(df['Data'] >= start_date) & (df['Data'] <= end_date)]
+    # Calcola la media dei pesi
+    media_pesi_ultimi_7_giorni = last_7_days['Kg'].mean()
+    
+    # Media ultimi 7 giorni
+    st.metric(':spiral_calendar_pad: Media ultimi 7 giorni', 
+              f"{media_pesi_ultimi_7_giorni:.2f} Kg", 
+              f"dal {start_date.strftime('%d/%m/%Y')} al {end_date.strftime('%d/%m/%Y')}")
+
+with col4:
     # Trova l'indice del valore massimo del peso giornaliero
     indice_massimo_peso = df['Kg'].idxmax()
     # Estrai la data corrispondente all'indice minimo
@@ -158,8 +178,10 @@ with tab1:
     
 with tab2:
     df.drop('Ora_in_minuti', inplace=True, axis='columns')
-    df['Media settimanale (Kg)'] = df['Media settimanale (Kg)'].replace(0,'')
+    #df['Media settimanale (Kg)'] = df['Media settimanale (Kg)'].replace(0,'')
     df['Kcal Piano nutrizionale'] = df['Kcal Piano nutrizionale'].fillna('')
+    df = df[['Giorno', 'Data', 'Ora', 'Kg', 'Media ultimi 7 giorni','Kcal Piano nutrizionale']]
+
     
     st.dataframe(
         df,
