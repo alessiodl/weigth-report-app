@@ -145,7 +145,7 @@ with st.sidebar:
     st.date_input(':spiral_calendar_pad: Dal:', value = st.session_state.start_date, max_value = today, format="DD.MM.YYYY", key='start_date_input', on_change=set_start_date)
     st.date_input(':spiral_calendar_pad: al:', value = st.session_state.end_date, max_value = today, format="DD.MM.YYYY", key='end_date_input', on_change=set_end_date)
     
-    st.write('Stai visualizzando le informazioni per periodo cha va dal {}, al {}:'.format(st.session_state.start_date.strftime("%d/%m/%Y"), st.session_state.end_date.strftime("%d/%m/%Y")))
+    st.write('Stai visualizzando le informazioni per periodo cha va dal {}, al {}'.format(st.session_state.start_date.strftime("%d/%m/%Y"), st.session_state.end_date.strftime("%d/%m/%Y")))
               
 with col1:
     # Trova il valore minimo dell'orario
