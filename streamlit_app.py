@@ -35,7 +35,8 @@ df['Kg'] = pd.to_numeric(df['Kg'], errors='coerce')
 # Converti la colonna 'Data' in formato datetime
 df['Data'] = pd.to_datetime(df['Data'], format='%d/%m/%Y')
 
-df = df[(df['Data'].dt.date >= st.session_state.start_date) & (df['Data'].dt.date <= st.session_state.end_date)]
+if st.session_state.end_date >= st.session_state.start_date:
+    df = df[(df['Data'].dt.date >= st.session_state.start_date) & (df['Data'].dt.date <= st.session_state.end_date)]
 
 df.sort_values(by="Data", inplace=True, ascending=True)
 
@@ -145,7 +146,15 @@ with st.sidebar:
     st.date_input(':spiral_calendar_pad: Dal:', value = st.session_state.start_date, max_value = today, format="DD.MM.YYYY", key='start_date_input', on_change=set_start_date)
     st.date_input(':spiral_calendar_pad: al:', value = st.session_state.end_date, max_value = today, format="DD.MM.YYYY", key='end_date_input', on_change=set_end_date)
     
-    st.write('Stai visualizzando le informazioni per periodo cha va dal {}, al {}'.format(st.session_state.start_date.strftime("%d/%m/%Y"), st.session_state.end_date.strftime("%d/%m/%Y")))
+    if st.session_state.end_date >= st.session_state.start_date:
+        observed_period = st.session_state.end_date - st.session_state.start_date 
+        st.info(':information_source: Stai visualizzando le informazioni per un periodo di **{} giorni**, che va dal {}, al {}'.format(
+            observed_period.days,
+            st.session_state.start_date.strftime("%d/%m/%Y"), 
+            st.session_state.end_date.strftime("%d/%m/%Y"))
+        )
+    else:
+        st.error(':warning: L\'intervallo temporale inserito non è corretto!')
               
 with col1:
     # Trova il valore minimo dell'orario
