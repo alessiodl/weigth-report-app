@@ -5,6 +5,16 @@ from io import StringIO
 import requests
 from datetime import datetime, timedelta
 
+today = datetime.now().date()
+year = today.year
+first_day = datetime(year, 1, 1).date()
+
+# Stato per memorizzare le date selezionate
+if 'start_date' not in st.session_state:
+    st.session_state.start_date = first_day
+if 'end_date' not in st.session_state:
+    st.session_state.end_date = today
+
 # Scarica il contenuto del Google Sheet
 url = "https://docs.google.com/spreadsheets/d/15zspXv1dM__F0uunaG9hT_PsrPfU5MZJ-0IzjULzDXI/export?format=csv"
 response = requests.get(url)
@@ -16,18 +26,16 @@ df = pd.read_csv(StringIO(data.decode('utf-8')))
 df.drop(columns="Media settimanale (Kg)", inplace=True)
 df = df.dropna(subset=['Kg'])
 
-# Sostituisci la virgola con il punto nella colonna 'Kg' e 'Media settimanale (Kg)'
+# Sostituisci la virgola con il punto nella colonna 'Kg'
 df['Kg'] = df['Kg'].str.replace(',', '.')
-#df['Media settimanale (Kg)'] = df['Media settimanale (Kg)'].str.replace(',', '.')
 
 # Converti a tipo float
 df['Kg'] = pd.to_numeric(df['Kg'], errors='coerce')
-#df['Media settimanale (Kg)'] = pd.to_numeric(df['Media settimanale (Kg)'], errors='coerce')
 
 # Converti la colonna 'Data' in formato datetime
 df['Data'] = pd.to_datetime(df['Data'], format='%d/%m/%Y')
-# Sistema la media settimanale
-#df['Media settimanale (Kg)'].fillna(0, inplace=True)
+
+df = df[(df['Data'].dt.date >= st.session_state.start_date) & (df['Data'].dt.date <= st.session_state.end_date)]
 
 df.sort_values(by="Data", inplace=True, ascending=True)
 
@@ -89,8 +97,6 @@ for index, row in df[df['Kcal Piano nutrizionale'].notna()].iterrows():
 
 # Aggiorna il layout per impostare il range dell'asse Y
 fig.update_layout(
-    # title='Grafico del Peso Giornaliero e Media Settimanale',
-    # xaxis_title='Data',
     yaxis_title='Peso (Kg)',
     yaxis=dict(range=[69, 75]),
     legend=dict(
@@ -102,9 +108,6 @@ fig.update_layout(
     )
 )
 
-# Visualizza il grafico
-# fig.show()
-
 # Creazione dell'app Streamlit
 st.set_page_config(
     page_title="Peso",
@@ -113,7 +116,6 @@ st.set_page_config(
 )
 
 st.title(':scales: Weight report :weight_lifter:')
-# st.markdown("Statistiche peso aggiornate quotidianamente. I valori usati per le metriche vengono prelevati da un *Google Spreadisheet*")
 st.divider()
 col1, col2, col3, col4 = st.columns(4)
 
@@ -128,6 +130,23 @@ st.write(
     unsafe_allow_html=True,
 )
 
+def set_start_date():
+    st.session_state.start_date = st.session_state.start_date_input
+
+def set_end_date():
+    st.session_state.end_date = st.session_state.end_date_input
+
+with st.sidebar:
+    
+    st.header('Periodo di interesse')
+    st.caption('Filtra i dati per concentrarti su una finestra temporale specifica')
+    
+    # Widget date_input con le date iniziali dallo stato della sessione
+    st.date_input(':spiral_calendar_pad: Dal:', value = st.session_state.start_date, max_value = today, format="DD.MM.YYYY", key='start_date_input', on_change=set_start_date)
+    st.date_input(':spiral_calendar_pad: al:', value = st.session_state.end_date, max_value = today, format="DD.MM.YYYY", key='end_date_input', on_change=set_end_date)
+    
+    st.write('Stai visualizzando le informazioni per periodo cha va dal {}, al {}:'.format(st.session_state.start_date.strftime("%d/%m/%Y"), st.session_state.end_date.strftime("%d/%m/%Y")))
+              
 with col1:
     # Trova il valore minimo dell'orario
     min_ora = divmod(df['Ora_in_minuti'].min(), 60)
@@ -178,11 +197,9 @@ with tab1:
     
 with tab2:
     df.drop('Ora_in_minuti', inplace=True, axis='columns')
-    #df['Media settimanale (Kg)'] = df['Media settimanale (Kg)'].replace(0,'')
     df['Kcal Piano nutrizionale'] = df['Kcal Piano nutrizionale'].fillna('')
     df = df[['Giorno', 'Data', 'Ora', 'Kg', 'Media ultimi 7 giorni','Kcal Piano nutrizionale']]
 
-    
     st.dataframe(
         df,
         column_config={
@@ -202,4 +219,3 @@ with tab2:
         use_container_width=True, 
         hide_index=True
     )
-
