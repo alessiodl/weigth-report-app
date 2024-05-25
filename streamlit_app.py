@@ -148,7 +148,7 @@ with st.sidebar:
     
     if st.session_state.end_date >= st.session_state.start_date:
         observed_period = st.session_state.end_date - st.session_state.start_date 
-        st.info(':information_source: Stai visualizzando le informazioni per un periodo di **{} giorni**, che va dal {}, al {}'.format(
+        st.info(':information_source: Stai visualizzando le informazioni per un periodo di **{} giorni**, che va dal {} al {}'.format(
             observed_period.days,
             st.session_state.start_date.strftime("%d/%m/%Y"), 
             st.session_state.end_date.strftime("%d/%m/%Y"))
